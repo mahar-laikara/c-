@@ -1,0 +1,144 @@
+#include <iostream>
+#include <vector>
+#include <climits>
+
+#define SIZE 3
+
+using namespace std;
+
+// Structure to represent the moves
+struct Move {
+    int row, col;
+};
+
+// Function to check if the game is over and return the winner
+int evaluateBoard(const vector<vector<char>>& board) {
+    // Checking rows
+    for (int i = 0; i < SIZE; ++i) {
+        if (board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
+            if (board[i][0] == 'X') return 10;
+            else if (board[i][0] == 'O') return -10;
+        }
+    }
+    // Checking columns
+    for (int j = 0; j < SIZE; ++j) {
+        if (board[0][j] == board[1][j] && board[1][j] == board[2][j]) {
+            if (board[0][j] == 'X') return 10;
+            else if (board[0][j] == 'O') return -10;
+        }
+    }
+    // Checking diagonals
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
+        if (board[0][0] == 'X') return 10;
+        else if (board[0][0] == 'O') return -10;
+    }
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
+        if (board[0][2] == 'X') return 10;
+        else if (board[0][2] == 'O') return -10;
+    }
+    // If no winner yet
+    return 0;
+}
+
+// Function to check if there are any moves left
+bool isMovesLeft(const vector<vector<char>>& board) {
+    for (int i = 0; i < SIZE; ++i) {
+        for (int j = 0; j < SIZE; ++j) {
+            if (board[i][j] == '_') return true;
+        }
+    }
+    return false;
+}
+
+// Minimax function with alpha-beta pruning
+int minimax(vector<vector<char>>& board, int depth, bool isMaximizer, int alpha, int beta) {
+    int score = evaluateBoard(board);
+    if (score == 10 || score == -10) return score;
+    if (!isMovesLeft(board)) return 0;
+    if (isMaximizer) {
+        int best = INT_MIN;
+        for (int i = 0; i < SIZE; ++i) {
+            for (int j = 0; j < SIZE; ++j) {
+                if (board[i][j] == '_') {
+                    board[i][j] = 'X';
+                    best = max(best, minimax(board, depth + 1, !isMaximizer, alpha, beta));
+                    alpha = max(alpha, best);
+                    board[i][j] = '_';
+                    if (beta <= alpha) break;
+                }
+            }
+        }
+        return best;
+    } else {
+        int best = INT_MAX;
+        for (int i = 0; i < SIZE; ++i) {
+            for (int j = 0; j < SIZE; ++j) {
+                if (board[i][j] == '_') {
+                    board[i][j] = 'O';
+                    best = min(best, minimax(board, depth + 1, !isMaximizer, alpha, beta));
+                    beta = min(beta, best);
+                    board[i][j] = '_';
+                    if (beta <= alpha) break;
+                }
+            }
+        }
+        return best;
+    }
+}
+
+// Function to find the best move using minimax with alpha-beta pruning
+Move findBestMove(vector<vector<char>>& board) {
+    int bestVal = INT_MIN;
+    Move bestMove;
+    bestMove.row = -1;
+    bestMove.col = -1;
+    for (int i = 0; i < SIZE; ++i) {
+        for (int j = 0; j < SIZE; ++j) {
+            if (board[i][j] == '_') {
+                board[i][j] = 'X';
+                int moveVal = minimax(board, 0, false, INT_MIN, INT_MAX);
+                board[i][j] = '_';
+                if (moveVal > bestVal) {
+                    bestMove.row = i;
+                    bestMove.col = j;
+                    bestVal = moveVal;
+                }
+            }
+        }
+    }
+    return bestMove;
+}
+
+// Function to print the board
+void printBoard(const vector<vector<char>>& board) {
+    for (int i = 0; i < SIZE; ++i) {
+        for (int j = 0; j < SIZE; ++j) {
+            cout << board[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+int main() {
+    vector<vector<char>> board = {{'_', '_', '_'},
+                                   {'_', '_', '_'},
+                                   {'_', '_', '_'}};
+    int moveCount = 0;
+    while (isMovesLeft(board)) {
+        printBoard(board);
+        Move bestMove = findBestMove(board);
+        cout << "Best Move: " << bestMove.row << ", " << bestMove.col << endl;
+        board[bestMove.row][bestMove.col] = (moveCount % 2 == 0) ? 'X' : 'O';
+        int score = evaluateBoard(board);
+        if (score == 10) {
+            cout << "Player X wins!" << endl;
+            break;
+        } else if (score == -10) {
+            cout << "Player O wins!" << endl;
+            break;
+        }
+        moveCount++;
+    }
+    if (!isMovesLeft(board)) cout << "It's a draw!" << endl;
+    return 0;
+}
